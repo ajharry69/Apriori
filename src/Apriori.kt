@@ -19,8 +19,6 @@ fun main() {
     val input = Scanner(System.`in`)
     val transactionList: MutableList<MutableList<String>> = ArrayList() // Transaction List
     val sortedTransactionList: MutableList<MutableList<String>> = ArrayList() // Sorted Transaction List
-    val ctl: MutableList<String> = ArrayList() // Consolidated Transaction List
-    val copyCtl: MutableList<String> = ArrayList() // Copy of Consolidated Transaction List
     val prioriList: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Consolidated Transaction List
     var count = 0
 
@@ -43,51 +41,50 @@ fun main() {
         count++
     }
 
-    transactionList.forEach {
-        it.forEach { product ->
-            ctl.add(product)
-        }
-    }
-
     transactionList.forEach { sortedTransactionList.add(it.asSequence().sorted().toMutableList()) }
 
-    var rpc = 1 // Required Item Pair(s) Count
-    while (prioriList.size != 1) {
+    sortedTransactionList.forEach {
+        it.forEach { s ->
+            val itemList: MutableList<String> = ArrayList()
+            itemList.add(s)
+            val ip = itemList.asSequence().sorted().toMutableList()
+            val map: MutableMap<MutableList<String>, Int> = HashMap()
+            map[ip] = getItemPairCount(ip, sortedTransactionList)
 
-        sortedTransactionList.forEach {
-            var innerRpc = 0
-            while (innerRpc < rpc) {
-
-                innerRpc++
-            }
+            if (!prioriList.contains(map)) prioriList.add(map)
         }
-
-        rpc++
     }
 
-    copyCtl.addAll(ctl.asSequence().sorted().toMutableList())
-
-    ctl.clear()
-
-    ctl.addAll(copyCtl)
-
-    ctl.forEachIndexed { _, s ->
-        val itemList: MutableList<String> = ArrayList()
-        itemList.add(s)
-        val map: MutableMap<MutableList<String>, Int> = HashMap()
-        map.putIfAbsent(
-            itemList,
-            getItemPairCount(itemList.asSequence().sorted().toMutableList(), sortedTransactionList)
-        )
-        prioriList.add(map)
-    }
+//    var rpc = 1 // Required Item Pair(s) Count
+//    while (prioriList.size != 1) {
+//
+//        sortedTransactionList.forEach {
+//            val itemList: MutableList<String> = ArrayList()
+//            var i = 0
+//            while (i < rpc) {
+//
+//                val s = it[i]
+//                if (!itemList.contains(s)) itemList.add(s)
+//                i++
+//            }
+//            val ip = itemList.asSequence().sorted().toMutableList()
+//            val map: MutableMap<MutableList<String>, Int> = HashMap()
+//            map.putIfAbsent(
+//                ip,
+//                getItemPairCount(ip, sortedTransactionList)
+//            )
+//            prioriList.add(map)
+//        }
+//
+//        rpc++
+//    }
 
     println(
         """
 
-        Original: $transactionList
-        Original Sorted: $sortedTransactionList
-        Consolidated: $ctl
+        ORIGINAL: $transactionList
+        ORIGINAL SORTED: $sortedTransactionList
+        APRIORI: $prioriList
     """.trimIndent()
     )
 }
@@ -100,7 +97,7 @@ fun main() {
 fun getItemPairCount(ip: MutableList<String>, tl: MutableList<MutableList<String>>): Int {
     var count = 0
     tl.forEach {
-        while (it.containsAll(ip)) count++
+        if (it.containsAll(ip)) count++
     }
     return count
 }
