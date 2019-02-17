@@ -47,8 +47,8 @@ fun main() {
     println(
         """
 
-        ORIGINAL: $transactionList
-        ORIGINAL SORTED: $sortedTransactionList
+        T.L: $transactionList
+        T.L.S: $sortedTransactionList
 
     """.trimIndent()
     )
@@ -56,41 +56,51 @@ fun main() {
     var rpc = 1 // Required Item Pair(s) Count
     while (al.size != 1) {
         val cAl: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Copy of @al
-        val alKeys: MutableList<MutableList<String>> = ArrayList()
+        val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
+        val cAlK: MutableList<MutableList<String>> = ArrayList() // Copy of @al Keys
 
         sortedTransactionList.forEach {
-            it.forEach { s ->
-                val itemList: MutableList<String> = ArrayList()
-                itemList.add(s)
-                val ip = itemList.asSequence().sorted().toMutableList()
-                val map: MutableMap<MutableList<String>, Int> = HashMap()
-                map[ip] = getItemPairCount(ip, sortedTransactionList)
+            if (rpc <= 1) {
+                it.forEach { s ->
+                    val il: MutableList<String> = ArrayList()
+                    il.add(s)
+                    val ip = il.asSequence().sorted().toMutableList()
+                    val map: MutableMap<MutableList<String>, Int> = HashMap()
+                    map[ip] = getItemPairCount(ip, sortedTransactionList)
 
-                if (!al.contains(map)) {
-                    alKeys.add(ip)
-                    al.add(map)
+                    if (!al.contains(map)) {
+                        alK.add(ip)
+                        al.add(map)
+                    }
                 }
+            } else {
+                // TODO: Implement else...
+            }
+        }
+
+        cAl.addAll(al) // Make a copy of Apriori List
+        cAlK.clear()
+        cAlK.addAll(alK) // Make a copy of Apriori List Keys
+
+        cAl.forEachIndexed { i, m ->
+            try {
+                val s: Int = m.getValue(cAlK[i])
+                if (s < ms) {
+                    al.remove(m)
+                    alK.remove(cAlK[i])
+                }
+            } catch (ex: Exception) {
+                println("Error: ${ex.message}\n")
             }
         }
 
         println(
             """
-            S$rpc: $al
-            S$rpc KEYS: $alKeys
+            S$rpc A: $al
+            S$rpc KEYS: $alK
 
         """.trimIndent()
         )
-
-        cAl.addAll(al) // Make a copy of Apriori List
-
-        cAl.forEachIndexed { i, m ->
-            val s: Int = m.getValue(alKeys[i])
-            if (s < ms) {
-                al.remove(m)
-            }
-        }
-
-        cAl.addAll(al)
 
         rpc++
     }
@@ -102,6 +112,14 @@ fun main() {
         ============================================================
     """.trimIndent()
     )
+
+}
+
+fun prioriMergedKeys(vararg l1: MutableList<String>): MutableList<String> {
+    val k1: MutableList<String> = ArrayList()
+
+    l1.forEach { k1.addAll(it) }
+    return k1.toSortedSet().toMutableList()
 }
 
 /**
