@@ -21,7 +21,7 @@ fun main() {
     val sortedTransactionList: MutableList<MutableList<String>> = ArrayList() // Sorted Transaction List
     val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
     val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
-    val ms = 2
+    val ms = 3 // TODO: Change this...
     var count = 0
 
     println("Input number of transactions: ")
@@ -104,23 +104,32 @@ fun main() {
             }
         }
 
+        var isEndLoop = false
+        if (al.size <= 0) {
+            al.addAll(cAl)
+            isEndLoop = true
+        }
+
         println(
             """
-            S$rpc K-C: $cAlK
-            S$rpc K: $alK
-            S$rpc A-C: $cAl
-            S$rpc A: $al
 
+            S$rpc K-C: $cAlK
+            S$rpc A-C: $cAl
+
+            S$rpc K: $alK
+            S$rpc A: $al
+            ........................................................................
         """.trimIndent()
         )
 
-        if (rpc == 4) break
+        if (isEndLoop) break
 
         rpc++
     }
 
     println(
         """
+
         ============================================================
         T.L: $transactionList
         T.L.S: $sortedTransactionList
