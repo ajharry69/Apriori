@@ -20,6 +20,7 @@ fun main() {
     val transactionList: MutableList<MutableList<String>> = ArrayList() // Transaction List
     val sortedTransactionList: MutableList<MutableList<String>> = ArrayList() // Sorted Transaction List
     val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
+    val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
     val ms = 2
     var count = 0
 
@@ -31,50 +32,60 @@ fun main() {
     }
 
     while (count < tn) {
-        val itemList: MutableList<String> = ArrayList()
+        val il: MutableList<String> = ArrayList()
         println("\nInput batch ${count + 1} of $whatIs(s):")
         while (true) {
-            val userInput = input.next().toLowerCase()
+            val userInput = input.nextLine().toLowerCase()
             if (userInput == ";".toLowerCase()) break
-            itemList.add(userInput)
+            if (userInput.isNotEmpty()) il.add(userInput)
         }
-        transactionList.add(itemList)
+        transactionList.add(il)
         count++
     }
 
     transactionList.forEach { sortedTransactionList.add(it.asSequence().sorted().toMutableList()) }
 
-    println(
-        """
-
-        T.L: $transactionList
-        T.L.S: $sortedTransactionList
-
-    """.trimIndent()
-    )
-
     var rpc = 1 // Required Item Pair(s) Count
     while (al.size != 1) {
         val cAl: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Copy of @al
-        val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
         val cAlK: MutableList<MutableList<String>> = ArrayList() // Copy of @al Keys
 
-        sortedTransactionList.forEach {
-            if (rpc <= 1) {
+        if (rpc <= 1) {
+            sortedTransactionList.forEach {
                 it.forEach { s ->
                     val il: MutableList<String> = ArrayList()
-                    il.add(s)
-                    val ip = il.asSequence().sorted().toMutableList()
-                    val map: MutableMap<MutableList<String>, Int> = HashMap()
-                    map[ip] = getItemPairCount(ip, sortedTransactionList)
+                    if (!il.contains(s)) {
+                        il.add(s)
+//                        val ip = il.asSequence().sorted().toMutableList()
+                        val ip = prioriMergedKeys(il)
+                        val map: MutableMap<MutableList<String>, Int> = HashMap()
+                        map[ip] = getItemPairCount(ip, sortedTransactionList)
 
-                    if (!al.contains(map)) {
-                        alK.add(ip)
-                        al.add(map)
+                        if (!al.contains(map)) {
+                            alK.add(ip)
+                            al.add(map)
+                        }
                     }
                 }
-            } else {
-                // TODO: Implement else...
+            }
+        } else {
+            cAlK.clear()
+            cAlK.addAll(alK)
+            alK.clear()
+            al.clear()
+            cAlK.forEach { a ->
+                cAlK.forEachIndexed { _, b ->
+                    val ip = prioriMergedKeys(a, b)
+                    if (!alK.contains(ip) && rpc == ip.size) {
+                        val map: MutableMap<MutableList<String>, Int> = HashMap()
+                        map[ip] = getItemPairCount(ip, sortedTransactionList)
+
+                        if (!al.contains(map)) {
+                            alK.add(ip)
+                            al.add(map)
+                        }
+                    }
+                }
             }
         }
 
@@ -90,17 +101,20 @@ fun main() {
                     alK.remove(cAlK[i])
                 }
             } catch (ex: Exception) {
-                println("Error: ${ex.message}\n")
             }
         }
 
         println(
             """
+            S$rpc K-C: $cAlK
+            S$rpc K: $alK
+            S$rpc A-C: $cAl
             S$rpc A: $al
-            S$rpc KEYS: $alK
 
         """.trimIndent()
         )
+
+        if (rpc == 4) break
 
         rpc++
     }
@@ -108,13 +122,19 @@ fun main() {
     println(
         """
         ============================================================
-        AL: ${al[0]}
+        T.L: $transactionList
+        T.L.S: $sortedTransactionList
+        AL: $al
         ============================================================
     """.trimIndent()
     )
 
 }
 
+/**
+ * @param l1: List of items to be merged
+ * @return list
+ */
 fun prioriMergedKeys(vararg l1: MutableList<String>): MutableList<String> {
     val k1: MutableList<String> = ArrayList()
 
