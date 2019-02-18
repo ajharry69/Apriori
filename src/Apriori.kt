@@ -3,8 +3,17 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 fun main() {
-    println("========Apriori Algo Program========\n\n")
+    val pStartTime = System.currentTimeMillis()
     val whatIs = "product"
+    val input = Scanner(System.`in`)
+    val tl: MutableList<MutableList<String>> = ArrayList() // Transaction List
+    val stl: MutableList<MutableList<String>> = ArrayList() // Sorted @tl
+    val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
+    val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
+    var ms = 2 // Minimum Support
+    var fh = 0 // First Highest Support
+
+    println("========Apriori Algo Program========\n\n")
     println(
         """
         Usage Instructions:
@@ -16,13 +25,6 @@ fun main() {
 
     """.trimIndent()
     )
-    val input = Scanner(System.`in`)
-    val transactionList: MutableList<MutableList<String>> = ArrayList() // Transaction List
-    val sortedTransactionList: MutableList<MutableList<String>> = ArrayList() // Sorted Transaction List
-    val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
-    val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
-    val ms = 3 // TODO: Change this...
-    var count = 0
 
     println("Input number of transactions: ")
     val tn = try {
@@ -31,6 +33,7 @@ fun main() {
         0
     }
 
+    var count = 0
     while (count < tn) {
         val il: MutableList<String> = ArrayList()
         println("\nInput batch ${count + 1} of $whatIs(s):")
@@ -39,11 +42,13 @@ fun main() {
             if (userInput == ";".toLowerCase()) break
             if (userInput.isNotEmpty()) il.add(userInput)
         }
-        transactionList.add(il)
+        tl.add(il)
         count++
     }
 
-    transactionList.forEach { sortedTransactionList.add(it.asSequence().sorted().toMutableList()) }
+    tl.forEach { stl.add(it.asSequence().sorted().toMutableList()) }
+
+    val startTime = System.currentTimeMillis()
 
     var rpc = 1 // Required Item Pair(s) Count
     while (al.size != 1) {
@@ -51,15 +56,18 @@ fun main() {
         val cAlK: MutableList<MutableList<String>> = ArrayList() // Copy of @al Keys
 
         if (rpc <= 1) {
-            sortedTransactionList.forEach {
+            resetPrioriListAndKeys(cAlK, alK, al)
+            stl.forEach {
                 it.forEach { s ->
                     val il: MutableList<String> = ArrayList()
                     if (!il.contains(s)) {
                         il.add(s)
-//                        val ip = il.asSequence().sorted().toMutableList()
                         val ip = prioriMergedKeys(il)
+                        val mpc = getItemPairCount(ip, stl) // Matching List-Pair Count
+                        if (fh < mpc) fh = mpc
+
                         val map: MutableMap<MutableList<String>, Int> = HashMap()
-                        map[ip] = getItemPairCount(ip, sortedTransactionList)
+                        map[ip] = mpc
 
                         if (!al.contains(map)) {
                             alK.add(ip)
@@ -69,16 +77,13 @@ fun main() {
                 }
             }
         } else {
-            cAlK.clear()
-            cAlK.addAll(alK)
-            alK.clear()
-            al.clear()
+            resetPrioriListAndKeys(cAlK, alK, al)
             cAlK.forEach { a ->
                 cAlK.forEachIndexed { _, b ->
                     val ip = prioriMergedKeys(a, b)
                     if (!alK.contains(ip) && rpc == ip.size) {
                         val map: MutableMap<MutableList<String>, Int> = HashMap()
-                        map[ip] = getItemPairCount(ip, sortedTransactionList)
+                        map[ip] = getItemPairCount(ip, stl)
 
                         if (!al.contains(map)) {
                             alK.add(ip)
@@ -105,9 +110,24 @@ fun main() {
         }
 
         var isEndLoop = false
-        if (al.size <= 0) {
+        var isResetLoop = false
+        val isNotRequiredAlSize = al.size <= 0 // is not required @al size - Prevents showing NULL/ZERO result
+        if (isNotRequiredAlSize) {
+            isEndLoop = isNotRequiredAlSize
+            isResetLoop = ms < fh && !isEndLoop
             al.addAll(cAl)
-            isEndLoop = true
+            alK.addAll(cAlK)
+
+            val nms = ms + 1
+            rpc = 1
+            ++ms
+
+            println(
+                """
+    Attempting different Minimum Support...
+    Minimum Support is resetting from [${nms - 1}] to [$nms]....
+            """
+            )
         }
 
         println(
@@ -122,22 +142,46 @@ fun main() {
         """.trimIndent()
         )
 
+        if (isResetLoop) continue
         if (isEndLoop) break
 
         rpc++
     }
 
+    val endTime = System.currentTimeMillis()
+
     println(
         """
 
-        ============================================================
-        T.L: $transactionList
-        T.L.S: $sortedTransactionList
+        ================================================================
+        A.R.D: ${(endTime - startTime).toDouble() / 1000}sec
+        P.R.D: ${(endTime - pStartTime).toDouble() / 1000}sec
+        M.S: $ms
+        ----------------------------------------------------------------
+        T.L: $tl
+        T.L.S: $stl
+        ----------------------------------------------------------------
         AL: $al
-        ============================================================
+        ================================================================
     """.trimIndent()
     )
 
+}
+
+/**
+ * @param cAlK:
+ * @param alK:
+ * @param al:
+ */
+private fun resetPrioriListAndKeys(
+    cAlK: MutableList<MutableList<String>>,
+    alK: MutableList<MutableList<String>>,
+    al: MutableList<MutableMap<MutableList<String>, Int>>
+) {
+    cAlK.clear()
+    cAlK.addAll(alK)
+    alK.clear()
+    al.clear()
 }
 
 /**
