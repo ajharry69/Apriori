@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -10,6 +11,7 @@ fun main() {
     val stl: MutableList<MutableList<String>> = ArrayList() // Sorted @tl
     val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
     val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
+    val supportedFileFormats = listOf("csv")
     var ms = 2 // Minimum Support
     var fh = 0 // First Highest Support
 
@@ -26,24 +28,85 @@ fun main() {
     """.trimIndent()
     )
 
-    println("Input number of transactions: ")
-    val tn = try {
-        input.nextInt()
-    } catch (e: Exception) {
-        0
-    }
+    println(
+        """
+        Available Data Sources:
+            1). Read from csv file
+            2). Manual input by typing
 
-    var count = 0
-    while (count < tn) {
-        val il: MutableList<String> = ArrayList()
-        println("\nInput batch ${count + 1} of $whatIs(s):")
-        while (true) {
-            val userInput = input.nextLine().toLowerCase()
-            if (userInput == ";".toLowerCase()) break
-            if (userInput.isNotEmpty()) il.add(userInput)
+        Select data source (by corresponding number):
+    """.trimIndent()
+    )
+
+    try {
+        val ds = Scanner(System.`in`).nextInt() // Data Source
+
+        if (ds in 1..2) {
+            if (ds == 1) {
+                println("\nAbsolute file path or file location:")
+                val path = Scanner(System.`in`).nextLine()
+                if (path.isNotEmpty()) {
+                    val file = File(path)
+                    if (file.isFile) {
+                        if (file.extension.toLowerCase() == "csv") {
+                            file.populateTransactionList(tl)
+                        } else {
+                            throw Exception("Unsupported file format. Only $supportedFileFormats files accepted")
+                        }
+                    } else {
+                        val files = file.listFiles { _: File, s: String ->
+                            s.endsWith("csv", true)
+                        }
+
+                        if (files.isNotEmpty()) {
+                            val fs = files.size // Files Size / Number of Files found
+                            files.forEachIndexed { i, f -> println("${i + 1}). ${f.name}") }
+
+                            try {
+                                println("\nSelect file (by corresponding number):")
+                                val fid = Scanner(System.`in`).nextInt() // File ID i.e. number from the list
+                                if (fid in 1..fs) {
+                                    files[fid - 1].populateTransactionList(tl)
+                                } else {
+                                    throw Exception("Selected option '$fid' not available in files list")
+                                }
+                            } catch (ex: Exception) {
+                                throw Exception(ex.message)
+                            }
+                        } else {
+                            throw Exception("No supported file format found. Only $supportedFileFormats files allowed")
+                        }
+                    }
+                } else {
+                    throw Exception("File path is empty")
+                }
+            } else {
+                println("Input number of transactions: ")
+                val tn = try {
+                    Scanner(System.`in`).nextInt()
+                } catch (e: Exception) {
+                    0
+                }
+
+                var count = 0
+                while (count < tn) {
+                    val il: MutableList<String> = ArrayList() // Item List
+                    println("\nInput batch ${count + 1} of $whatIs(s):")
+                    while (true) {
+                        val userInput = input.nextLine().toLowerCase()
+                        if (userInput == ";".toLowerCase()) break
+                        if (userInput.isNotEmpty()) il.add(userInput)
+                    }
+                    tl.add(il)
+                    count++
+                }
+            }
+        } else {
+            throw Exception("Selected option '$ds' not available")
         }
-        tl.add(il)
-        count++
+    } catch (ex: Exception) {
+        println("\nError: ${ex.message}")
+        System.exit(0)
     }
 
     tl.forEach { stl.add(it.asSequence().sorted().toMutableList()) }
@@ -124,9 +187,9 @@ fun main() {
 
             println(
                 """
-    Attempting different Minimum Support...
-    Minimum Support is resetting from [${nms - 1}] to [$nms]....
-            """
+                Attempting different Minimum Support...
+                Minimum Support is resetting from [${nms - 1}] to [$nms]....
+            """.trimIndent()
             )
         }
 
@@ -167,6 +230,21 @@ fun main() {
     )
 
 }
+
+private fun File.populateTransactionList(tl: MutableList<MutableList<String>>) {
+    var c = 0
+    this@populateTransactionList.forEachLine {
+        if (c > 0 && it != "") { // Skips the 1st line since it 'normally' contains column titles
+            val il: MutableList<String> = ArrayList() // Item List
+            it.split(Regex(",")).forEach { item -> il.add(item.cleansed()) }
+            tl.add(il)
+        }
+        c++
+    }
+}
+
+private fun String.cleansed(): String =
+    this.replace("\"", "").replace("'", "").trimStart().trimEnd()
 
 /**
  * @param cAlK:
