@@ -4,6 +4,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 fun main() {
+
     val pStartTime = System.currentTimeMillis()
     val whatIs = "product"
     val input = Scanner(System.`in`)
@@ -11,7 +12,7 @@ fun main() {
     val stl: MutableList<MutableList<String>> = ArrayList() // Sorted @tl
     val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
     val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
-    val supportedFileFormats = listOf("csv")
+    val sff = listOf("csv") // Supported File Formats
     var ms = 2 // Minimum Support
     var fh = 0 // First Highest Support
 
@@ -39,7 +40,7 @@ fun main() {
     )
 
     try {
-        val ds = Scanner(System.`in`).nextInt() // Data Source
+        val ds = Scanner(System.`in`).nextLine().toInt() // Data Source
 
         if (ds in 1..2) {
             if (ds == 1) {
@@ -48,14 +49,14 @@ fun main() {
                 if (path.isNotEmpty()) {
                     val file = File(path)
                     if (file.isFile) {
-                        if (file.extension.toLowerCase() == "csv") {
+                        if (sff.contains(file.extension.toLowerCase())) {
                             file.populateTransactionList(tl)
                         } else {
-                            throw Exception("Unsupported file format. Only $supportedFileFormats files accepted")
+                            throw Exception("Unsupported file format. Only $sff files accepted")
                         }
                     } else {
                         val files = file.listFiles { _: File, s: String ->
-                            s.endsWith("csv", true)
+                            sff.contains(s.substringAfterLast('.'))
                         }
 
                         if (files.isNotEmpty()) {
@@ -64,17 +65,19 @@ fun main() {
 
                             try {
                                 println("\nSelect file (by corresponding number):")
-                                val fid = Scanner(System.`in`).nextInt() // File ID i.e. number from the list
+                                val fid = Scanner(System.`in`).nextLine().toInt() // File ID i.e. number from the list
                                 if (fid in 1..fs) {
                                     files[fid - 1].populateTransactionList(tl)
                                 } else {
                                     throw Exception("Selected option '$fid' not available in files list")
                                 }
+                            } catch (ex: NumberFormatException) {
+                                throw Exception("Invalid input. Only integers allowed")
                             } catch (ex: Exception) {
                                 throw Exception(ex.message)
                             }
                         } else {
-                            throw Exception("No supported file format found. Only $supportedFileFormats files allowed")
+                            throw Exception("No supported file format found. Only $sff files allowed")
                         }
                     }
                 } else {
@@ -172,29 +175,33 @@ fun main() {
             }
         }
 
-        var isEndLoop = false
+        val isEndLoop = al.size <= 0
         var isResetLoop = false
-        val isNotRequiredAlSize = al.size <= 0 // is not required @al size - Prevents showing NULL/ZERO result
-        if (isNotRequiredAlSize) {
-            isEndLoop = isNotRequiredAlSize
-            isResetLoop = ms < fh && !isEndLoop
+        if (isEndLoop) {
+            isResetLoop = ms < fh
             al.addAll(cAl)
             alK.addAll(cAlK)
 
             val nms = ms + 1
-            rpc = 1
-            ++ms
 
-            println(
-                """
+            if (isResetLoop) {
+                rpc = 1
+                ms += 1
+
+                println(
+                    """
+
                 Attempting different Minimum Support...
                 Minimum Support is resetting from [${nms - 1}] to [$nms]....
             """.trimIndent()
-            )
+                )
+            }
+
         }
 
-        println(
-            """
+        if (!isResetLoop) {
+            println(
+                """
 
             S$rpc K-C: $cAlK
             S$rpc A-C: $cAl
@@ -203,12 +210,13 @@ fun main() {
             S$rpc A: $al
             ........................................................................
         """.trimIndent()
-        )
+            )
+        }
 
         if (isResetLoop) continue
         if (isEndLoop) break
 
-        rpc++
+        rpc += 1
     }
 
     val endTime = System.currentTimeMillis()
@@ -216,16 +224,16 @@ fun main() {
     println(
         """
 
-        ================================================================
+        ===========================================================================================
         A.R.D: ${(endTime - startTime).toDouble() / 1000}sec
         P.R.D: ${(endTime - pStartTime).toDouble() / 1000}sec
         M.S: $ms
-        ----------------------------------------------------------------
+        -------------------------------------------------------------------------------------------
         T.L: $tl
         T.L.S: $stl
-        ----------------------------------------------------------------
+        -------------------------------------------------------------------------------------------
         AL: $al
-        ================================================================
+        ===========================================================================================
     """.trimIndent()
     )
 
@@ -233,13 +241,13 @@ fun main() {
 
 private fun File.populateTransactionList(tl: MutableList<MutableList<String>>) {
     var c = 0
-    this@populateTransactionList.forEachLine {
+    this.forEachLine {
         if (c > 0 && it != "") { // Skips the 1st line since it 'normally' contains column titles
             val il: MutableList<String> = ArrayList() // Item List
             it.split(Regex(",")).forEach { item -> il.add(item.cleansed()) }
             tl.add(il)
         }
-        c++
+        ++c
     }
 }
 
