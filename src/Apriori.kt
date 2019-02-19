@@ -8,11 +8,12 @@ fun main() {
     val pStartTime = System.currentTimeMillis()
     val whatIs = "product"
     val input = Scanner(System.`in`)
+    val inputDelimiter = Scanner(System.`in`)
     val tl: MutableList<MutableList<String>> = ArrayList() // Transaction List
     val stl: MutableList<MutableList<String>> = ArrayList() // Sorted @tl
     val al: MutableList<MutableMap<MutableList<String>, Int>> = ArrayList() // Apriori List
     val alK: MutableList<MutableList<String>> = ArrayList() // @al Keys
-    val sff = listOf("csv") // Supported File Formats
+    val sff = listOf("csv", "txt") // Supported File Formats
     var ms = 2 // Minimum Support
     var fh = 0 // First Highest Support
 
@@ -23,8 +24,8 @@ fun main() {
             General:
                 Press 'ENTER' button after every $whatIs / instruction entry
             Specific:
-                1). Input '0' to QUIT the program
-                2). Input ';' to move to NEXT items input
+                1) Input '0' to QUIT the program
+                2) Input ';' to move to NEXT items input
 
     """.trimIndent()
     )
@@ -32,80 +33,88 @@ fun main() {
     println(
         """
         Available Data Sources:
-            1). Read from csv file
-            2). Manual input by typing
+            1) Read from any of these files: $sff
+            2) Manual input (by typing)
 
         Select data source (by corresponding number):
     """.trimIndent()
     )
 
     try {
-        val ds = Scanner(System.`in`).nextLine().toInt() // Data Source
+        try {
+            val ds = Scanner(System.`in`).nextLine().toInt() // Data Source
 
-        if (ds in 1..2) {
-            if (ds == 1) {
-                println("\nAbsolute file path or file location:")
-                val path = Scanner(System.`in`).nextLine()
-                if (path.isNotEmpty()) {
-                    val file = File(path)
-                    if (file.isFile) {
-                        if (sff.contains(file.extension.toLowerCase())) {
-                            file.populateTransactionList(tl)
-                        } else {
-                            throw Exception("Unsupported file format. Only $sff files accepted")
-                        }
-                    } else {
-                        val files = file.listFiles { _: File, s: String ->
-                            sff.contains(s.substringAfterLast('.'))
-                        }
-
-                        if (files.isNotEmpty()) {
-                            val fs = files.size // Files Size / Number of Files found
-                            files.forEachIndexed { i, f -> println("${i + 1}). ${f.name}") }
-
-                            try {
-                                println("\nSelect file (by corresponding number):")
-                                val fid = Scanner(System.`in`).nextLine().toInt() // File ID i.e. number from the list
-                                if (fid in 1..fs) {
-                                    files[fid - 1].populateTransactionList(tl)
-                                } else {
-                                    throw Exception("Selected option '$fid' not available in files list")
-                                }
-                            } catch (ex: NumberFormatException) {
-                                throw Exception("Invalid input. Only integers allowed")
-                            } catch (ex: Exception) {
-                                throw Exception(ex.message)
+            if (ds in 1..2) {
+                if (ds == 1) {
+                    println("\nAbsolute file path or file location:")
+                    val path = Scanner(System.`in`).nextLine()
+                    print("\n")
+                    if (path.isNotEmpty()) {
+                        val file = File(path)
+                        if (file.isFile) {
+                            if (sff.contains(file.extension.toLowerCase())) {
+                                file.populateTransactionList(tl, inputDelimiter)
+                            } else {
+                                throw Exception("Unsupported file format. Only $sff files accepted")
                             }
                         } else {
-                            throw Exception("No supported file format found. Only $sff files allowed")
+                            val files = file.listFiles { _: File, s: String ->
+                                sff.contains(s.substringAfterLast('.'))
+                            }
+
+                            if (files.isNotEmpty()) {
+                                val fs = files.size // Files Size / Number of Files found
+                                files.forEachIndexed { i, f -> println("${i + 1}) ${f.name}") }
+
+                                try {
+                                    println("\nSelect file (by corresponding number):")
+                                    val fid =
+                                        Scanner(System.`in`).nextLine().toInt() // File ID i.e. number from the list
+                                    if (fid in 1..fs) {
+                                        files[fid - 1].populateTransactionList(tl, inputDelimiter)
+                                    } else {
+                                        throw Exception("Selected option '$fid' not available in files list")
+                                    }
+                                } catch (ex: NumberFormatException) {
+                                    throw Exception("Invalid input. Only integers allowed")
+                                } catch (ex: Exception) {
+                                    throw Exception(ex.message)
+                                }
+                            } else {
+                                throw Exception("No supported file format found. Only $sff files allowed")
+                            }
                         }
+                    } else {
+                        throw Exception("File path is empty")
                     }
                 } else {
-                    throw Exception("File path is empty")
+                    println("Input number of transactions: ")
+                    val tn = try {
+                        Scanner(System.`in`).nextInt()
+                    } catch (e: Exception) {
+                        0
+                    }
+
+                    var count = 0
+                    while (count < tn) {
+                        val il: MutableList<String> = ArrayList() // Item List
+                        println("\nInput batch ${count + 1} of $whatIs(s):")
+                        while (true) {
+                            val userInput = input.nextLine().toLowerCase()
+                            if (userInput == ";".toLowerCase()) break
+                            if (userInput.isNotEmpty()) il.add(userInput)
+                        }
+                        tl.add(il)
+                        count++
+                    }
                 }
             } else {
-                println("Input number of transactions: ")
-                val tn = try {
-                    Scanner(System.`in`).nextInt()
-                } catch (e: Exception) {
-                    0
-                }
-
-                var count = 0
-                while (count < tn) {
-                    val il: MutableList<String> = ArrayList() // Item List
-                    println("\nInput batch ${count + 1} of $whatIs(s):")
-                    while (true) {
-                        val userInput = input.nextLine().toLowerCase()
-                        if (userInput == ";".toLowerCase()) break
-                        if (userInput.isNotEmpty()) il.add(userInput)
-                    }
-                    tl.add(il)
-                    count++
-                }
+                throw Exception("Selected option '$ds' not available")
             }
-        } else {
-            throw Exception("Selected option '$ds' not available")
+        } catch (ex: NumberFormatException) {
+            throw Exception("Invalid input. Only integers allowed")
+        } catch (ex: Exception) {
+            throw Exception(ex.message)
         }
     } catch (ex: Exception) {
         println("\nError: ${ex.message}")
@@ -239,16 +248,101 @@ fun main() {
 
 }
 
-private fun File.populateTransactionList(tl: MutableList<MutableList<String>>) {
-    var c = 0
-    this.forEachLine {
-        if (c > 0 && it != "") { // Skips the 1st line since it 'normally' contains column titles
+private fun File.populateTransactionList(tl: MutableList<MutableList<String>>, input: Scanner) {
+    try {
+        val p = this.getFileContentDelimiter(input)
+        val isCSVTitled = this.isCSVContentTitled()
+
+        var c = 0
+        this.forEachLine {
             val il: MutableList<String> = ArrayList() // Item List
-            it.split(Regex(",")).forEach { item -> il.add(item.cleansed()) }
+            if (c > 0 && isCSVTitled && it != "") { // Skips the 1st line since it 'normally' contains column titles
+                it.split(Regex(p)).forEach { item -> il.add(item.cleansed()) }
+            }
+
+            if (!isCSVTitled && it != "") {
+                it.split(Regex(p)).forEach { item -> il.add(item.cleansed()) }
+            }
             tl.add(il)
+            ++c
         }
-        ++c
+    } catch (ex: Exception) {
+        throw  Exception(ex.message)
     }
+}
+
+private fun File.getFileContentDelimiter(input: Scanner): String {
+    return when (this.name.substringAfterLast('.')) {
+        "csv" -> ","
+        else -> {
+            try {
+                println("\nInput file content delimiter e.g. ',' for *.csv files:")
+                val delimiter = input.nextLine()
+                if (!delimiter.isNullOrEmpty()) {
+                    delimiter
+                } else {
+                    " "
+                }
+            } catch (ex: Exception) {
+                throw Exception(ex.message)
+            }
+        }
+    }
+}
+
+/**
+ * Tries to check if a file is a *.csv file and the first line of its content
+ * is a title or not by comparing it (1st line) to the top 10 records if any
+ * of its contents are similar
+ * @receiver File
+ * @return true{file contains a title} if condition is met and
+ * false{file does not contain a title} otherwise
+ */
+private fun File.isCSVContentTitled(): Boolean {
+
+    //    if (isTitled) {
+//        val ls: MutableList<List<String>> = ArrayList()
+//        this.forEachLine { ls.add(it.cleansed().split(Regex(","))) }
+//
+//        try {
+//            val lsLength = ls.size
+//
+//            if (lsLength > 0) {
+//                val subLs = if (lsLength >= 10) {
+//                    ls.slice(0..10)
+//                } else {
+//                    ls.slice(0 until lsLength)
+//                }
+//
+//                var c = 0
+//                val subLsLength = subLs.size
+//                while (c < subLsLength) {
+//                    val fs = subLs[0]
+//                    val ns = emptyList<String>().toMutableList()
+//
+//                    if (c < subLsLength - 1) ns.addAll(subLs[c + 1])
+//
+//                    val cSubLs = fs.toMutableList()
+//                    cSubLs.addAll(ns)
+//                    val set = cSubLs.toSet()
+//
+//                    val cSubLsLength = cSubLs.size
+//                    val setLength = set.size
+//                    val sDiff = cSubLsLength - setLength
+//
+//                    isTitled = sDiff !in 1..cSubLsLength
+//
+//                    if (!isTitled) break
+//
+//                    ++c
+//                }
+//            }
+//        } catch (ex: Exception) {
+//            throw Exception(ex.message)
+//        }
+//    }
+
+    return name.substringAfterLast('.') == "csv"
 }
 
 private fun String.cleansed(): String =
