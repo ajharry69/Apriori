@@ -300,49 +300,61 @@ private fun File.getFileContentDelimiter(input: Scanner): String {
  */
 private fun File.isCSVContentTitled(): Boolean {
 
-    //    if (isTitled) {
-//        val ls: MutableList<List<String>> = ArrayList()
-//        this.forEachLine { ls.add(it.cleansed().split(Regex(","))) }
-//
-//        try {
-//            val lsLength = ls.size
-//
-//            if (lsLength > 0) {
-//                val subLs = if (lsLength >= 10) {
-//                    ls.slice(0..10)
-//                } else {
-//                    ls.slice(0 until lsLength)
-//                }
-//
-//                var c = 0
-//                val subLsLength = subLs.size
-//                while (c < subLsLength) {
-//                    val fs = subLs[0]
-//                    val ns = emptyList<String>().toMutableList()
-//
-//                    if (c < subLsLength - 1) ns.addAll(subLs[c + 1])
-//
-//                    val cSubLs = fs.toMutableList()
-//                    cSubLs.addAll(ns)
-//                    val set = cSubLs.toSet()
-//
-//                    val cSubLsLength = cSubLs.size
-//                    val setLength = set.size
-//                    val sDiff = cSubLsLength - setLength
-//
-//                    isTitled = sDiff !in 1..cSubLsLength
-//
-//                    if (!isTitled) break
-//
-//                    ++c
-//                }
-//            }
-//        } catch (ex: Exception) {
-//            throw Exception(ex.message)
-//        }
-//    }
+    var isTitled = name.substringAfterLast('.') == "csv"
+    if (isTitled) {
+        val ls: MutableList<List<String>> = ArrayList()
+        this.forEachLine {
+            val sl: MutableList<String> = ArrayList()
+            it.cleansed().split(Regex(",")).forEach { item -> sl.add(item.cleansed()) }
+            ls.add(sl.toList())
+        }
 
-    return name.substringAfterLast('.') == "csv"
+        try {
+            val lsLength = ls.size
+
+            var sc = 0 // Document is titled {supporters count}
+            var oc = 0 // Document is not titled {Opposers count}
+            if (lsLength > 0) {
+                val subLs = if (lsLength >= 10) {
+                    ls.slice(0..10)
+                } else {
+                    ls.slice(0 until lsLength)
+                }
+
+                var c = 0
+                val subLsLength = subLs.size
+                while (c < subLsLength) {
+                    val fs = subLs[0]
+                    val ns = emptyList<String>().toMutableList()
+
+                    if (c < subLsLength - 1) ns.addAll(subLs[c + 1])
+
+                    val cSubLs = fs.toMutableList()
+                    cSubLs.addAll(ns)
+                    val set = cSubLs.toSet()
+
+                    val cSubLsLength = cSubLs.size
+                    val setLength = set.size
+                    val sDiff = cSubLsLength - setLength
+
+                    // file's marked {titled} if {set} and {copyOf sub-list} difference is < 1 i.e. some elements
+                    // have been found to be duplicate copies of the original list
+                    isTitled = sDiff !in 1..cSubLsLength
+
+                    if (isTitled) ++sc else ++oc
+
+                    ++c
+                }
+            }
+
+            isTitled = sc > oc // Mark CSV file as titled if @sc count is greater than @op count
+
+        } catch (ex: Exception) {
+            throw Exception(ex.message)
+        }
+    }
+
+    return isTitled
 }
 
 private fun String.cleansed(): String =
