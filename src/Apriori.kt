@@ -257,11 +257,19 @@ private fun File.populateTransactionList(tl: MutableList<MutableList<String>>, i
         this.forEachLine {
             val il: MutableList<String> = ArrayList() // Item List
             if (c > 0 && isCSVTitled && it != "") { // Skips the 1st line since it 'normally' contains column titles
-                it.split(Regex(p)).forEach { item -> il.add(item.cleansed()) }
+                it.split(Regex(p)).forEach { item ->
+                    run {
+                        if (item != "") il.add(item.cleansed())
+                    }
+                }
             }
 
             if (!isCSVTitled && it != "") {
-                it.split(Regex(p)).forEach { item -> il.add(item.cleansed()) }
+                it.split(Regex(p)).forEach { item ->
+                    run {
+                        if (item != "") il.add(item.cleansed())
+                    }
+                }
             }
             tl.add(il)
             ++c
@@ -358,7 +366,7 @@ private fun File.isCSVContentTitled(): Boolean {
 }
 
 private fun String.cleansed(): String =
-    this.replace("\"", "").replace("'", "").trimStart().trimEnd()
+    this.replace("\"", "").replace("'", "").trimStart().trimEnd().toLowerCase()
 
 /**
  * @param cAlK:
