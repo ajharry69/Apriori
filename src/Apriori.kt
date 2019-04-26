@@ -17,12 +17,12 @@ fun main() {
     var ms = 2 // Minimum Support
     var fh = 0 // First Highest Support
 
-    println("========Apriori Algo Program========\n\n")
+    println("========Apriori Program========\n\n")
     println(
         """
         Usage Instructions:
             General:
-                Press 'ENTER' button after every $whatIs / instruction entry
+                Press 'ENTER/INSERT' button after every $whatIs / instruction entry
             Specific:
                 1) Input '0' to QUIT the program
                 2) Input ';' to move to NEXT items input
@@ -257,25 +257,34 @@ private fun File.populateTransactionList(tl: MutableList<MutableList<String>>, i
         this.forEachLine {
             val il: MutableList<String> = ArrayList() // Item List
             if (c > 0 && isCSVTitled && it != "") { // Skips the 1st line since it 'normally' contains column titles
-                it.split(Regex(p)).forEach { item ->
-                    run {
-                        if (item != "") il.add(item.cleansed())
-                    }
-                }
+                populateTransactionList(it, p, il)
             }
 
             if (!isCSVTitled && it != "") {
-                it.split(Regex(p)).forEach { item ->
-                    run {
-                        if (item != "") il.add(item.cleansed())
-                    }
-                }
+                populateTransactionList(it, p, il)
             }
             tl.add(il)
             ++c
         }
     } catch (ex: Exception) {
+        ex.printStackTrace()
         throw  Exception(ex.message)
+    }
+}
+
+private fun File.populateTransactionList(
+    it: String,
+    p: String,
+    il: MutableList<String>
+) {
+    if (it.contains(p)) {
+        it.split(Regex(p)).forEach { item ->
+            run {
+                if (item != "") il.add(item.cleansed())
+            }
+        }
+    } else {
+        if (it != "") il.add(it.cleansed())
     }
 }
 
@@ -331,9 +340,9 @@ private fun File.isCSVContentTitled(): Boolean {
 
                 var c = 0
                 val subLsLength = subLs.size
+                val fs = subLs[0] // first content sequence
                 while (c < subLsLength) {
-                    val fs = subLs[0]
-                    val ns = emptyList<String>().toMutableList()
+                    val ns = emptyList<String>().toMutableList() // next content sequence
 
                     if (c < subLsLength - 1) ns.addAll(subLs[c + 1])
 
@@ -345,8 +354,8 @@ private fun File.isCSVContentTitled(): Boolean {
                     val setLength = set.size
                     val sDiff = cSubLsLength - setLength
 
-                    // file's marked {titled} if {set} and {copyOf sub-list} difference is < 1 i.e. some elements
-                    // have been found to be duplicate copies of the original list
+                    // file's marked {titled} if {set} and {copyOf sub-list} difference is < 1
+                    // i.e. NO elements have been found to be duplicate copies of the original list
                     isTitled = sDiff !in 1..cSubLsLength
 
                     if (isTitled) ++sc else ++oc
@@ -358,7 +367,8 @@ private fun File.isCSVContentTitled(): Boolean {
             isTitled = sc > oc // Mark CSV file as titled if @sc count is greater than @op count
 
         } catch (ex: Exception) {
-            throw Exception(ex.message)
+//            throw Exception(ex.message)
+            isTitled = false // TODO: Remedy this
         }
     }
 
