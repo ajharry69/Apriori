@@ -6,3 +6,5 @@
 *.iws
 .idea/
 out/
+/src/JWTDecoder.kt
+/src/decoder.jar
