@@ -31,13 +31,14 @@ input an unlimited number of **products** for the `1st, 2nd...` transactions res
     > **Example,**
     >
     > | Transaction No. | Products / Itemset |
-    > | ------- | ------ |
+    > | ---- | ------ |
     > | 1st | Bread, Milk |
     > | 2nd | Bread, Diaper, Beer, Eggs |
     > | 3rd | Milk, Diaper, Beer, Coke |
     > | 4th | Bread, Milk, Diaper, Beer |
     > | 5th | Bread, Milk, Diaper, Coke |
-      > For the above sample transaction, you can input `5` as the number of transactions 
+    >  
+      > For the sample transaction above, you can input `5` as the number of transactions 
       then input `1st` transaction's products by typing `Bread`, press **ENTER**, `Milk`, 
       press **ENTER** then `;` and press **ENTER** to input **product** set for the `2nd` 
       transaction similar pattern applies to the rest of the transactions.
