@@ -12,7 +12,7 @@ application designed to be used via a text only computer interface.
 ### Usage Instructions
 **N/B**: Press **ENTER** / **INSERT** after every input or command for the program to record the 
 input or execute command.
-1. Run the application through your terminal using the following command `java -jar apriori.jar`
+1. Run the application through your terminal using the following command `java -jar {directory-path-to}/apriori.jar`
 2. Select data source. Two options are available:
     - Read from a **.csv** or **.txt** file by typing `1`. (recommended)            
     - Manually input the transactions by typing `2`.
